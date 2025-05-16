@@ -1,0 +1,3 @@
+#ignore virtual enviroment
+roamly_venv
+.env
