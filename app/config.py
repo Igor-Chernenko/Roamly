@@ -15,11 +15,12 @@ class Settings(BaseSettings):
     DATABASE_PASSWORD: str
     DATABASE_PORT: str
     DATABASE_USERNAME: str
+    DATABASE_NAME: str
 
     #Security ENV variables (JWT/Encoding)
 
     class Config:
-        env_file = "../.env"
+        env_file = ".env"
 
 
 settings = Settings()
