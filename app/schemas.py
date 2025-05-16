@@ -9,6 +9,7 @@ describes the apps API data contracts (what is sent/received in API requests and
 from pydantic import BaseModel
 from pydantic import EmailStr
 from datetime import datetime
+
 #----------------------------------[ Users ]----------------------------------
 """
 UserBase: basic User outline for inheretence
@@ -31,4 +32,6 @@ class UserReturn(UserBase):
     #neccessary to allow pydantic to use SQLAlchemy ORM models
     class config:
         orm_mode=True
+
+
 

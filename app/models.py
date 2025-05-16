@@ -7,7 +7,7 @@ handles SQLalchemy Database Model Schema creation (Database strucuture)
 
 Model Design Verion: 0.1
 """
-from database import Base
+from app.database import Base
 from sqlalchemy import text, Column, Integer, String, TIMESTAMP
 
 #----------------------------------[ Users ]----------------------------------

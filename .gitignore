@@ -1,3 +1,9 @@
 #ignore virtual enviroment
 roamly_venv
+
+#env variables
 .env
+
+#alembic files (dont ignore versions)
+roamly_alembic/__pycache__
+*.pyc
