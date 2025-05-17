@@ -51,5 +51,5 @@ class AdventureReturn(AdventureBase):
         from_attributes = True
 
     
-
+#----------------------------------[ Images ]----------------------------------
 
