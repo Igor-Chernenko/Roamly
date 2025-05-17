@@ -13,7 +13,19 @@ from app.database import get_gb
 from app.schemas import AdventureReturn
 from app.models import Adventures, Users
 router = APIRouter()
+#----------------------------------[ GET ]----------------------------------
+"""
+Basic Get request to retreive Adventure data
 
+Input:
+    limit: limit the amount of objects returned
+    skip: skips a certain amount of adventures
+    search: searches for a keyword in titles of Adventures
+    Example: http://localhost:8000/adventure/?limit=2&search=hiking
+    
+Return: Returns list of AdventureReturn pydantic schemas 
+
+"""
 @router.get("/",response_model=List[AdventureReturn])
 async def get_adventure(db: Session = Depends(get_gb), limit:int=5, skip:int = 0, search:Optional[str]=None):
     
