@@ -12,8 +12,11 @@ from app.database import get_gb
 
 from app.schemas import AdventureReturn
 from app.models import Adventures, Users
+
+from fastapi import HTTPException, status
+
 router = APIRouter()
-#----------------------------------[ GET ]----------------------------------
+#----------------------------------[ GET /Adventures ]----------------------------------
 """
 Basic Get request to retreive Adventure data
 
@@ -46,3 +49,29 @@ async def get_adventure(db: Session = Depends(get_gb), limit:int=5, skip:int = 0
         )
     
     return queried_adventures
+
+#----------------------------------[ GET /Adventures/{id} ]----------------------------------
+"""
+Basic Get request to retreive Adventure data based on id
+
+Input:
+    id: searches for a specific adventure with matching id
+    Example: http://localhost:8000/adventure/2
+    
+Return: Returns AdventureReturn pydantic schema if id is found
+        Returns http exception with code 404 if adventure id is not found
+
+"""
+@router.get("/{id}",response_model=AdventureReturn)
+async def get_adventure_id(id: int, db: Session = Depends(get_gb)):
+    adventure_query = db.query(Adventures).filter(Adventures.adventure_id == id).first()
+    
+    if not adventure_query:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Adventure with id={id} could not be found"
+        )
+    
+    return adventure_query
+
+    
