@@ -4,7 +4,7 @@ post.py
 =+=+=+=+=+=+=+=+=+=+=+=+=+=+=[ post Router ]=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
 handles post CRUD operations for the api
 
-Version 0.13
+Version 0.14
 """
 
 from fastapi import APIRouter, Depends
@@ -143,3 +143,29 @@ async def post_adventure_create(
         db.refresh(new_image)
 
     return new_adventure
+
+#----------------------------------[ DELETE /adventures/delete/{id} ]----------------------------------
+"""
+Delete request to delete an adventure based off of id
+
+Input:
+    id: id of adventure to delete
+
+Return:
+    - if found and deleted successfully: HTTP status code 204 with no return Content
+    - if not found: HTTP status code 404
+"""
+@router.delete("/delete/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_adventure_id(id, db: Session = Depends(get_gb)):
+    queried_adventure = db.query(Adventures).filter(Adventures.adventure_id == id)
+
+    if queried_adventure.first() == None:
+        raise HTTPException(
+            status_code= status.HTTP_404_NOT_FOUND,
+            detail=f"Adventure with id={id} could not be found"
+        )
+    
+    #IMPLEMENT: CHECK IF USER TRYING TO DELETE POST IS THE SAME USER AS THE ONE THAT POSTED
+
+    queried_adventure.delete(synchronize_session= False)
+    db.commit()
