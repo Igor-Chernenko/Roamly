@@ -25,11 +25,19 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
+class UserAuthReturn(UserBase):
+    jwt_token: str
+    created_at: datetime
+
+    #neccessary to allow pydantic to use SQLAlchemy ORM models
+    class Config:
+        from_attributes = True
+
+
 class UserReturn(UserBase):
     user_id: int
     created_at: datetime
 
-    #neccessary to allow pydantic to use SQLAlchemy ORM models
     class Config:
         from_attributes = True
 

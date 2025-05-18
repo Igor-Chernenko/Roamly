@@ -1,10 +1,10 @@
 """
-post.py
+adventure.py
 
-=+=+=+=+=+=+=+=+=+=+=+=+=+=+=[ post Router ]=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-handles post CRUD operations for the api
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=[ adventure Router ]=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+handles Adventure CRUD operations for the api
 
-Version 0.15
+Version 0.2.0
 """
 
 from fastapi import APIRouter, Depends
@@ -14,10 +14,12 @@ from app.database import get_gb
 
 from app.schemas import AdventureReturn, AdventureUpdate
 from app.models import Adventures, Images, Users
+from app.oauth2 import get_current_user
 
 from fastapi import HTTPException, status, UploadFile, File, Form
 
 router = APIRouter()
+
 #----------------------------------[ GET /adventures ]----------------------------------
 """
 Basic Get request to retrieve Adventure data
@@ -85,6 +87,7 @@ Input:
     description: Description of the adventure (Text)
     Images: List of the images of uploaded to the adventure
     Caption: List of the Captions of each picture (empty string if no caption)
+    Users information
 
 Return: if successfull: Returns HTTP 201 and AdventureReturn pydantic Schema
         if not successfull:
@@ -113,7 +116,8 @@ async def post_adventure_create(
     description: str = Form(...),
     images: List[UploadFile] = File(...),
     caption: List[str] = Form(...),
-    db: Session = Depends(get_gb)
+    db: Session = Depends(get_gb),
+    current_user: Users = Depends(get_current_user)
 ):
     
     if len(images) != len(caption):
@@ -122,9 +126,7 @@ async def post_adventure_create(
             detail="Number of image files must match number of captions"
         )
 
-    temp_user_id = 1
-
-    new_adventure = Adventures(title=title, description=description, owner_id = temp_user_id)
+    new_adventure = Adventures(title=title, description=description, owner_id = current_user.user_id)
     db.add(new_adventure)
     db.commit()
     db.refresh(new_adventure)
@@ -151,18 +153,28 @@ Delete request to delete an adventure based off of id
 Input:
     id: id of adventure to delete
 
+Process:
+    -Check if user attempting to delete is the same as the owener of the post
 Return:
     - if found and deleted successfully: HTTP status code 204 with no return Content
     - if not found: HTTP status code 404
+    - if person accessing is not the owner of post: HTTP status code 403
 """
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_adventure_id(id: int, db: Session = Depends(get_gb)):
+async def delete_adventure_id(id: int, db: Session = Depends(get_gb), current_user: Users = Depends(get_current_user)):
     queried_adventure = db.query(Adventures).filter(Adventures.adventure_id == id)
+    adventure = queried_adventure.first()
 
-    if queried_adventure.first() == None:
+    if adventure == None:
         raise HTTPException(
             status_code= status.HTTP_404_NOT_FOUND,
             detail=f"Adventure with id={id} could not be found"
+        )
+    
+    if adventure.owner_id != current_user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permision to perform this action"
         )
     
     #IMPLEMENT: CHECK IF USER TRYING TO DELETE POST IS THE SAME USER AS THE ONE THAT POSTED
@@ -180,12 +192,13 @@ Input:
 Return:
     - if found and updated successfully: HTTP status code 204 with no return Content
     - if not found: HTTP status code 404
+   - if person accessing is not the owner of post: HTTP status code 403
 
 notes:
     -Only changes the inputs recieved, must be in json format
 """
 @router.put("/{id}", status_code= status.HTTP_204_NO_CONTENT)
-async def update_adventure_id(id: int, new_adventure: AdventureUpdate, db: Session = Depends(get_gb)):
+async def update_adventure_id(id: int, new_adventure: AdventureUpdate, db: Session = Depends(get_gb), current_user: Users = Depends(get_current_user)):
     queried_adventure = db.query(Adventures).filter(Adventures.adventure_id == id)
 
     if queried_adventure.first() == None:
@@ -194,7 +207,11 @@ async def update_adventure_id(id: int, new_adventure: AdventureUpdate, db: Sessi
             detail=f"Adventure with id={id} could not be found"
         )
 
-    #IMPLEMENT: CHECK IF USER TRYING TO DELETE POST IS THE SAME USER AS THE ONE THAT POSTED
+    if queried_adventure.first().owner_id != current_user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permision to perform this action"
+        )
 
     queried_adventure.update(
         new_adventure.model_dump(exclude_unset=True),
