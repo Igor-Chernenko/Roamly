@@ -8,7 +8,7 @@ handles SQLalchemy Database Model Schema creation (Database strucuture)
 Model Design Verion: 1.0
 """
 from app.database import Base
-from sqlalchemy import text, Column, Integer, String, Text, TIMESTAMP, ForeignKey
+from sqlalchemy import text, Column, Integer, String, Text, TIMESTAMP, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 #----------------------------------[ Users ]----------------------------------
@@ -42,6 +42,9 @@ Data model for adventure table in Database
 
     Relationship to Users:
         Matches a user to the adventure based on the foreinKey Created
+
+    Notes:
+        Unique Constraint set to make the combination of title and owner_id unique
 """
 
 class Adventures(Base):
@@ -49,10 +52,14 @@ class Adventures(Base):
     adventure_id = Column(Integer, nullable = False, primary_key = True)
     title = Column(String, nullable= False)
     owner_id = Column(Integer, ForeignKey("users.user_id", ondelete= "CASCADE"), nullable= False)
-    created_at = Column(TIMESTAMP(timezone= True),nullable= False, server_default= text("now()"))
+    created_at = Column(TIMESTAMP(timezone= True), nullable= False, server_default= text("now()"))
     description = Column(Text)
 
     owner = relationship("Users")
+
+    __table_args__ = (
+        UniqueConstraint('title', 'owner_id', name='uq_owner_title'),
+        )
 
 #----------------------------------[ Likes ]----------------------------------
 

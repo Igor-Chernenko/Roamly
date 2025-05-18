@@ -10,6 +10,8 @@ from pydantic import BaseModel
 from pydantic import EmailStr
 from datetime import datetime
 
+from typing import Optional
+
 #----------------------------------[ Users ]----------------------------------
 """
 UserBase: basic User outline for inheretence
@@ -35,12 +37,16 @@ class UserReturn(UserBase):
 #----------------------------------[ Adventures ]----------------------------------
 """
 AdventureBase: basic outline for adventure inheretance
-AdventureCreate: Schema for creation of adventure input [Post]
+AdventureUpdate: schema for updating adventures [PUT]
 AdventureReturn: Return Schema for adventure [Get]
 """
 class AdventureBase(BaseModel):
     title: str
     description: str
+
+class AdventureUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
 
 class AdventureReturn(AdventureBase):
     adventure_id: int

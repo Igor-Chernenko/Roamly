@@ -12,7 +12,7 @@ from typing import List, Optional
 from sqlalchemy.orm import Session, joinedload
 from app.database import get_gb
 
-from app.schemas import AdventureReturn
+from app.schemas import AdventureReturn, AdventureUpdate
 from app.models import Adventures, Images, Users
 
 from fastapi import HTTPException, status, UploadFile, File, Form
@@ -156,7 +156,7 @@ Return:
     - if not found: HTTP status code 404
 """
 @router.delete("/delete/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_adventure_id(id, db: Session = Depends(get_gb)):
+async def delete_adventure_id(id: int, db: Session = Depends(get_gb)):
     queried_adventure = db.query(Adventures).filter(Adventures.adventure_id == id)
 
     if queried_adventure.first() == None:
@@ -168,4 +168,37 @@ async def delete_adventure_id(id, db: Session = Depends(get_gb)):
     #IMPLEMENT: CHECK IF USER TRYING TO DELETE POST IS THE SAME USER AS THE ONE THAT POSTED
 
     queried_adventure.delete(synchronize_session= False)
+    db.commit()
+
+#----------------------------------[ PUT /adventures/update/{id} ]----------------------------------
+"""
+PUT request to update an adventure based off of id
+
+Input:
+    id: id of adventure to update
+
+Return:
+    - if found and updated successfully: HTTP status code 204 with no return Content
+    - if not found: HTTP status code 404
+
+notes:
+    -Only changes the inputs recieved, must be in json format
+"""
+@router.put("/update/{id}", status_code= status.HTTP_204_NO_CONTENT)
+async def update_adventure_id(id: int, new_adventure: AdventureUpdate, db: Session = Depends(get_gb)):
+    queried_adventure = db.query(Adventures).filter(Adventures.adventure_id == id)
+
+    if queried_adventure.first() == None:
+        raise HTTPException(
+            status_code= status.HTTP_404_NOT_FOUND,
+            detail=f"Adventure with id={id} could not be found"
+        )
+
+    #IMPLEMENT: CHECK IF USER TRYING TO DELETE POST IS THE SAME USER AS THE ONE THAT POSTED
+
+    queried_adventure.update(
+        new_adventure.model_dump(exclude_unset=True),
+        synchronize_session = False
+    )
+
     db.commit()
