@@ -4,7 +4,7 @@ post.py
 =+=+=+=+=+=+=+=+=+=+=+=+=+=+=[ post Router ]=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
 handles post CRUD operations for the api
 
-Version 0.14
+Version 0.15
 """
 
 from fastapi import APIRouter, Depends
@@ -20,7 +20,7 @@ from fastapi import HTTPException, status, UploadFile, File, Form
 router = APIRouter()
 #----------------------------------[ GET /adventures ]----------------------------------
 """
-Basic Get request to retreive Adventure data
+Basic Get request to retrieve Adventure data
 
 Input:
     limit: limit the amount of objects returned
@@ -54,7 +54,7 @@ async def get_adventure(db: Session = Depends(get_gb), limit:int=5, skip:int = 0
 
 #----------------------------------[ GET /adventures/{id} ]----------------------------------
 """
-Basic Get request to retreive Adventure data based on id
+Basic Get request to retrieve Adventure data based on id
 
 Input:
     id: searches for a specific adventure with matching id
@@ -76,7 +76,7 @@ async def get_adventure_id(id: int, db: Session = Depends(get_gb)):
     
     return adventure_query
 
-#----------------------------------[ POST /adventures/create ]----------------------------------
+#----------------------------------[ POST /adventures ]----------------------------------
 """
 Post request to create Adventure Post
 
@@ -91,7 +91,7 @@ Return: if successfull: Returns HTTP 201 and AdventureReturn pydantic Schema
             - Raises HTTP 422 if amount of caption inputs and Image inputs doesnt match
 
 Notes about how this works:
-    The api recieves the request in multipart/form-data form, fastapi reads the boundry,
+    The api receives the request in multipart/form-data form, fastapi reads the boundary,
     seperates the data by the boundery and confirms that the content name matches each
     input. Image is stored in an UploadFile type and avoids writing the entire image into 
     memory.
@@ -107,7 +107,7 @@ PLAN: EXPORT THE DATA INTO S3 AND UPLOAD URL INTO IMAGES DATABASE, CURRENTLY NOT
 """
 from random import randint
 
-@router.post("/create", status_code= status.HTTP_201_CREATED, response_model= AdventureReturn)
+@router.post("/", status_code= status.HTTP_201_CREATED, response_model= AdventureReturn)
 async def post_adventure_create(
     title:str = Form(...),
     description: str = Form(...),
@@ -144,7 +144,7 @@ async def post_adventure_create(
 
     return new_adventure
 
-#----------------------------------[ DELETE /adventures/delete/{id} ]----------------------------------
+#----------------------------------[ DELETE /adventures/{id} ]----------------------------------
 """
 Delete request to delete an adventure based off of id
 
@@ -155,7 +155,7 @@ Return:
     - if found and deleted successfully: HTTP status code 204 with no return Content
     - if not found: HTTP status code 404
 """
-@router.delete("/delete/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_adventure_id(id: int, db: Session = Depends(get_gb)):
     queried_adventure = db.query(Adventures).filter(Adventures.adventure_id == id)
 
@@ -170,7 +170,7 @@ async def delete_adventure_id(id: int, db: Session = Depends(get_gb)):
     queried_adventure.delete(synchronize_session= False)
     db.commit()
 
-#----------------------------------[ PUT /adventures/update/{id} ]----------------------------------
+#----------------------------------[ PUT /adventures/{id} ]----------------------------------
 """
 PUT request to update an adventure based off of id
 
@@ -184,7 +184,7 @@ Return:
 notes:
     -Only changes the inputs recieved, must be in json format
 """
-@router.put("/update/{id}", status_code= status.HTTP_204_NO_CONTENT)
+@router.put("/{id}", status_code= status.HTTP_204_NO_CONTENT)
 async def update_adventure_id(id: int, new_adventure: AdventureUpdate, db: Session = Depends(get_gb)):
     queried_adventure = db.query(Adventures).filter(Adventures.adventure_id == id)
 
@@ -202,3 +202,4 @@ async def update_adventure_id(id: int, new_adventure: AdventureUpdate, db: Sessi
     )
 
     db.commit()
+
