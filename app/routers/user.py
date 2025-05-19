@@ -10,6 +10,8 @@ Version 0.1.0
 from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
+from sqlalchemy import text
+from typing import List, Optional
 
 from app.schemas import UserCreate, UserAuthReturn, UserReturn
 from app.database import get_gb
@@ -96,3 +98,63 @@ async def post_user(new_user_data: UserCreate, db: Session = Depends(get_gb)):
         "email":new_user.email,
         "username":new_user.username
     }
+
+#----------------------------------[ GET /user ]----------------------------------
+"""
+GET request to Retreive a list of users
+
+Inputs:
+    -username to search for
+    -amount to skip (default = 0)
+    -amount to limit to (default =10)
+
+Process:
+    - if the username search term is present:
+        -uses trigram indexes to search database and return users with 
+         similiar usernames, uses params to avoid sql injections.
+        -Pydantic processes each row from query into a UserReturn object to return
+    - if the username search term is not present:
+        - gets a query of users based off of Inputs
+
+Return:
+    -returns List of UserReturn objects
+
+    """
+@router.get("/", response_model = List[UserReturn])
+async def get_user(
+    db: Session = Depends(get_gb),
+    username: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 10
+):
+
+    if username:
+        similarity_amount = 0.1
+        sql = text(f"""
+        SELECT * FROM users
+        WHERE similarity(username, :u) > :sim_amount
+        ORDER BY similarity(username, :u) DESC
+        OFFSET :offset_amount
+        LIMIT :limit_amount
+        """)
+
+        params = {
+            "u": username,
+            "sim_amount": similarity_amount,
+            "offset_amount": skip,
+            "limit_amount": limit
+        }
+
+        user_search = db.execute(sql, params)
+
+        return [UserReturn(**dict(row)) for row in user_search]
+    else:
+        user_search = (
+            db.query(User)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+        return user_search
+    
+    

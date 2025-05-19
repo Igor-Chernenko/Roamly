@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends
 from typing import List, Optional
 from sqlalchemy.orm import Session, joinedload
 from app.database import get_gb
+from sqlalchemy import func
 
 from app.schemas import AdventureReturn, AdventureUpdate
 from app.models import Adventures, Images, Users
@@ -33,17 +34,21 @@ Input:
 Return: Returns list of AdventureReturn pydantic schemas 
 
 """
-@router.get("/",response_model=List[AdventureReturn])
+@router.get("/",response_model = List[AdventureReturn])
 async def get_adventure(db: Session = Depends(get_gb), limit:int=5, skip:int = 0, search:Optional[str]=None):
     
     if search:
-        queried_adventures = (
+        similarity_amount = 0.1
+        adventures = (
             db.query(Adventures)
-            .filter(Adventures.title.contains(search))
-            .limit(limit)
+            .filter(func.similarity(Adventures.title, search) > similarity_amount)
+            .order_by(func.similarity(Adventures.title, search).desc())
             .offset(skip)
+            .limit(limit)
             .all()
         )
+        return adventures
+    
     else:
         queried_adventures = (
             db.query(Adventures)
@@ -51,8 +56,7 @@ async def get_adventure(db: Session = Depends(get_gb), limit:int=5, skip:int = 0
             .offset(skip)
             .all()
         )
-    
-    return queried_adventures
+        return queried_adventures
 
 #----------------------------------[ GET /adventures/{id} ]----------------------------------
 """
