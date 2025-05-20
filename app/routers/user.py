@@ -4,7 +4,7 @@ user.py
 =+=+=+=+=+=+=+=+=+=+=+=+=+=+=[ user Router ]=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
 handles user CRUD operations for the api
 
-Version 0.1.0
+Version 0.3.0
 """
 
 from fastapi import APIRouter, HTTPException, status, Depends
@@ -157,4 +157,23 @@ async def get_user(
         )
         return user_search
     
+#----------------------------------[ GET /user/{id} ]----------------------------------
+"""
+Simple get request to get a user with a certain ID
+
+inputs: Id of user
+
+Return: if found: user
+        if not found: HTTP 404 
+"""
+@router.get("/{id}", response_model = UserReturn)
+async def get_user_id(id: int, db: Session = Depends(get_gb)):
+    queried_user = db.query(User).filter(User.user_id == id).first()
     
+    if not queried_user:
+        raise HTTPException(
+            status_code= status.HTTP_404_NOT_FOUND,
+            detail= f"coult not find user with id={id}"
+        )
+    
+    return queried_user
