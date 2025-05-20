@@ -33,6 +33,10 @@ class UserAuthReturn(UserBase):
     class Config:
         from_attributes = True
 
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
 
 class UserReturn(UserBase):
     user_id: int

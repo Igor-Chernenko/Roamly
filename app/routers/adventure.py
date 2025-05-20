@@ -204,6 +204,7 @@ notes:
 async def update_adventure_id(id: int, new_adventure: AdventureUpdate, db: Session = Depends(get_gb), current_user: Users = Depends(get_current_user)):
     queried_adventure = db.query(Adventures).filter(Adventures.adventure_id == id)
 
+    
     if queried_adventure.first() == None:
         raise HTTPException(
             status_code= status.HTTP_404_NOT_FOUND,

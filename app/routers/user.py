@@ -13,7 +13,7 @@ from passlib.context import CryptContext
 from sqlalchemy import text
 from typing import List, Optional
 
-from app.schemas import UserCreate, UserAuthReturn, UserReturn
+from app.schemas import UserCreate, UserAuthReturn, UserReturn, UserUpdate
 from app.database import get_gb
 from app.oauth2 import get_current_user, create_access_token
 from app.models import Users as User
@@ -173,14 +173,23 @@ async def get_user_id(id: int, db: Session = Depends(get_gb)):
     if not queried_user:
         raise HTTPException(
             status_code= status.HTTP_404_NOT_FOUND,
-            detail= f"coult not find user with id={id}"
+            detail= f"could not find user with id={id}"
         )
     
     return queried_user
 
 #----------------------------------[ Delete /user/{id} ]----------------------------------
+"""
+Simple Delete request to delete a user with a certain ID
 
-@router.delete("/{id}", status_code = status.HTTP_202_ACCEPTED)
+inputs: Id of user
+
+process: Checks if user, the user is attempting to delete is the same one that is being deleted
+
+Return: if found: user
+        if not found: HTTP 404 
+"""
+@router.delete("/{id}", status_code = status.HTTP_204_NO_CONTENT)
 async def delete_user_id(id: int, db: Session = Depends(get_gb), current_user: User = Depends(get_current_user)):
     
     if current_user.user_id != id:
@@ -193,7 +202,69 @@ async def delete_user_id(id: int, db: Session = Depends(get_gb), current_user: U
     if not db_query.first():
         raise HTTPException(
             status_code= status.HTTP_404_NOT_FOUND,
-            detail= f"coult not find user with id={id}"
+            detail= f"could not find user with id={id}"
         )
     db_query.delete(synchronize_session= False)
+    db.commit()
+
+#----------------------------------[ PUT /user/{id} ]----------------------------------
+"""
+Endpoint to Update User_id information (email, username or password)
+
+inputs:
+    - Users id
+    - New information
+
+process:
+    runs checks to ensure:
+        - its the correct user making the changes
+        - the email doesnt exist
+        - the username doesnt exist
+        - the user with the id exists
+        - if the user is changing password, that the password is in proper format
+    updates information
+
+returns:
+    - HTTP 403: trying to change information of a user that is not themselves
+    - HTTP 409: username and/or email already exist
+    - HTTP 404: could not find user
+    - HTTP 204: successfull change, no return content
+"""
+@router.put("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def put_user_id(id: int, new_user_data: UserUpdate, db: Session = Depends(get_gb), current_user : User = Depends(get_current_user)):
+    if current_user.user_id != id:
+        raise HTTPException(
+            status_code= status.HTTP_403_FORBIDDEN,
+            detail="You do not have permision to perform this action"
+        )
+    
+    if db.query(User).filter(User.email == new_user_data.email).first():
+        raise HTTPException(
+            status_code= status.HTTP_409_CONFLICT,
+            detail="Email has already been used to create acount"
+        )
+    
+    if db.query(User).filter(User.username == new_user_data.username).first():
+        raise HTTPException(
+            status_code= status.HTTP_409_CONFLICT,
+            detail="There is already an acount with that username"
+        )
+    
+    db_query = db.query(User).filter(User.user_id == id)
+
+    if not db_query.first():
+        raise HTTPException(
+            status_code= status.HTTP_404_NOT_FOUND,
+            detail= f"could not find user with id={id}"
+        )
+    if new_user_data.password:
+        check_password_requirments(new_user_data.password)
+
+        hashed_password = pwd_context.hash(new_user_data.password)
+        new_user_data.password = hashed_password
+
+    db_query.update(
+        new_user_data.model_dump(exclude_unset=True),
+        synchronize_session = False
+    )
     db.commit()
