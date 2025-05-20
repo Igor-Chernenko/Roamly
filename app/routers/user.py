@@ -4,7 +4,7 @@ user.py
 =+=+=+=+=+=+=+=+=+=+=+=+=+=+=[ user Router ]=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
 handles user CRUD operations for the api
 
-Version 0.3.0
+Version 0.4.0
 """
 
 from fastapi import APIRouter, HTTPException, status, Depends
@@ -177,3 +177,23 @@ async def get_user_id(id: int, db: Session = Depends(get_gb)):
         )
     
     return queried_user
+
+#----------------------------------[ Delete /user/{id} ]----------------------------------
+
+@router.delete("/{id}", status_code = status.HTTP_202_ACCEPTED)
+async def delete_user_id(id: int, db: Session = Depends(get_gb), current_user: User = Depends(get_current_user)):
+    
+    if current_user.user_id != id:
+        raise HTTPException(
+            status_code= status.HTTP_403_FORBIDDEN,
+            detail="You do not have permision to perform this action"
+        )
+    
+    db_query = db.query(User).filter(User.user_id == id)
+    if not db_query.first():
+        raise HTTPException(
+            status_code= status.HTTP_404_NOT_FOUND,
+            detail= f"coult not find user with id={id}"
+        )
+    db_query.delete(synchronize_session= False)
+    db.commit()

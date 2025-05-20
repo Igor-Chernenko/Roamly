@@ -4,7 +4,7 @@ adventure.py
 =+=+=+=+=+=+=+=+=+=+=+=+=+=+=[ adventure Router ]=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
 handles Adventure CRUD operations for the api
 
-Version 0.2.0
+Version 0.2.1
 """
 
 from fastapi import APIRouter, Depends
@@ -38,7 +38,7 @@ Return: Returns list of AdventureReturn pydantic schemas
 async def get_adventure(db: Session = Depends(get_gb), limit:int=5, skip:int = 0, search:Optional[str]=None):
     
     if search:
-        similarity_amount = 0.1
+        similarity_amount = 0.2
         adventures = (
             db.query(Adventures)
             .filter(func.similarity(Adventures.title, search) > similarity_amount)
@@ -166,6 +166,13 @@ Return:
 """
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_adventure_id(id: int, db: Session = Depends(get_gb), current_user: Users = Depends(get_current_user)):
+
+    if current_user.owner_id != id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permision to perform this action"
+        )
+    
     queried_adventure = db.query(Adventures).filter(Adventures.adventure_id == id)
     adventure = queried_adventure.first()
 
@@ -175,14 +182,6 @@ async def delete_adventure_id(id: int, db: Session = Depends(get_gb), current_us
             detail=f"Adventure with id={id} could not be found"
         )
     
-    if adventure.owner_id != current_user.user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permision to perform this action"
-        )
-    
-    #IMPLEMENT: CHECK IF USER TRYING TO DELETE POST IS THE SAME USER AS THE ONE THAT POSTED
-
     queried_adventure.delete(synchronize_session= False)
     db.commit()
 
