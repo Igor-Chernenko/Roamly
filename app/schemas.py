@@ -11,11 +11,21 @@ from pydantic import EmailStr
 from datetime import datetime
 
 from typing import Optional
+#----------------------------------[ Utilities ]----------------------------------
+"""
+Token: Returns a Token for user login
+"""
+class Token(BaseModel):
+    access_token: str 
+    token_type:str
 
 #----------------------------------[ Users ]----------------------------------
 """
 UserBase: basic User outline for inheretence
 UserCreate: schema for creation of user input [post]
+UserLogin: schema for logging into user [post]
+UserAuthReturn: response contract for JWT information after UserCreate [post]
+UserUpdate: schema for updating any of the Users information (email,password, username) [put]
 UserReturn: response contract for user information [get]
 """
 class UserBase(BaseModel):
@@ -23,6 +33,10 @@ class UserBase(BaseModel):
     username: str
 
 class UserCreate(UserBase):
+    password: str
+
+class UserLogin(BaseModel):
+    identification: str
     password: str
 
 class UserAuthReturn(UserBase):
@@ -44,7 +58,6 @@ class UserReturn(UserBase):
 
     class Config:
         from_attributes = True
-
 
 #----------------------------------[ Adventures ]----------------------------------
 """

@@ -8,6 +8,7 @@ Version 0.1.0
 """
 
 from jose import JWTError, jwt
+from passlib.context import CryptContext
 from datetime import datetime, timezone, timedelta
 from pydantic import BaseModel
 from typing import Optional
@@ -18,10 +19,15 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_gb
 from app.models import Users
+from app.utils import is_email
+from app.models import Users
 
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = settings.ALGORITHM
 ACCESS_TOKEN_EXPIRE_MIN = settings.ACCESS_TOKEN_EXPIRE_MIN
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 #----------------------------------[ Create JWT Token ]----------------------------------
 """
@@ -109,3 +115,41 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     queried_user = db.query(Users).filter(Users.user_id == token_data.id).first()
 
     return queried_user
+
+#----------------------------------[ Authenticate User ]----------------------------------
+def verify_password(attempted_password: str, password: str)-> bool:
+    """
+    helper function to check if a password is the same as another password that is hashed
+    """
+    return pwd_context.verify(attempted_password, password)
+
+
+"""
+Authenticates User by by checking if User is in database
+
+Inputs: identifcation, password: recieved from fast api's OAuth2PasswordRequestForm
+
+Process: uses the is_email function to check if the identification is of an email type
+    if it is then it parses the database with that if not then uses username
+
+return:
+    - HTTP 404 if user_information could not be found
+    - db_query: users information if found
+"""
+def authenticate_user(identification: str, password: str, db : Session):
+    if is_email(identification):
+        user_email = identification
+        db_query = db.query(Users).filter(Users.email == user_email).first()
+    
+    else:
+        users_username = identification
+        db_query = db.query(Users).filter(Users.username == users_username).first()
+
+    if not db_query or not verify_password(password, db_query.password):
+        raise HTTPException(
+            status_code= status.HTTP_404_NOT_FOUND,
+            detail= f"Password or Identification entered was wrong or does not exist"
+        )
+
+    return db_query
+

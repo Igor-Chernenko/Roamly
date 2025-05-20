@@ -4,7 +4,7 @@ user.py
 =+=+=+=+=+=+=+=+=+=+=+=+=+=+=[ user Router ]=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
 handles user CRUD operations for the api
 
-Version 0.4.0
+Version 0.5.0
 """
 
 from fastapi import APIRouter, HTTPException, status, Depends
@@ -12,10 +12,11 @@ from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from sqlalchemy import text
 from typing import List, Optional
+from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 
-from app.schemas import UserCreate, UserAuthReturn, UserReturn, UserUpdate
+from app.schemas import UserCreate, UserAuthReturn, UserReturn, UserUpdate, Token, UserLogin
 from app.database import get_gb
-from app.oauth2 import get_current_user, create_access_token
+from app.oauth2 import get_current_user, create_access_token, authenticate_user
 from app.models import Users as User
 
 router = APIRouter()
@@ -268,3 +269,14 @@ async def put_user_id(id: int, new_user_data: UserUpdate, db: Session = Depends(
         synchronize_session = False
     )
     db.commit()
+
+#----------------------------------[ POST /user/login ]----------------------------------
+
+@router.post("/login", response_model= Token)
+async def post_user_login(login_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_gb)):
+    user = authenticate_user(login_data.username, login_data.password, db)
+    access_token = create_access_token(data = {"user_id":user.user_id})
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
