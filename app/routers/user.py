@@ -271,7 +271,9 @@ async def put_user_id(id: int, new_user_data: UserUpdate, db: Session = Depends(
     db.commit()
 
 #----------------------------------[ POST /user/login ]----------------------------------
-
+"""
+basic 
+"""
 @router.post("/login", response_model= Token)
 async def post_user_login(login_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_gb)):
     user = authenticate_user(login_data.username, login_data.password, db)
