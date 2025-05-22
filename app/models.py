@@ -8,7 +8,7 @@ handles SQLalchemy Database Model Schema creation (Database strucuture)
 Model Design Verion: 1.0
 """
 from app.database import Base
-from sqlalchemy import text, Column, Integer, String, Text, TIMESTAMP, ForeignKey, UniqueConstraint
+from sqlalchemy import text, Column, Integer, String, Text, TIMESTAMP, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 
 #----------------------------------[ Users ]----------------------------------
@@ -28,6 +28,16 @@ class Users(Base):
     email = Column(String, nullable = False, unique = True)
     password = Column(String, nullable = False)
     created_at = Column(TIMESTAMP(timezone=True), nullable = False, server_default= text("now()"))
+
+    __table_args__ = (
+    Index(
+        "username_trgm_idx",
+        "username",
+        postgresql_using="gin",
+        postgresql_ops={"username": "gin_trgm_ops"},
+    ),
+    )
+
 
 #----------------------------------[ Adventures ]----------------------------------
 
@@ -59,6 +69,12 @@ class Adventures(Base):
 
     __table_args__ = (
         UniqueConstraint('title', 'owner_id', name='uq_owner_title'),
+        Index(
+        "adventure_id_trgm_idx",
+        "adventure_id",
+        postgresql_using="gin",
+        postgresql_ops={"username": "gin_trgm_ops"},
+        )
         )
 
 #----------------------------------[ Likes ]----------------------------------
@@ -94,6 +110,7 @@ class Images(Base):
     url = Column(String, nullable = False, unique=True)
     adventure_id = Column(Integer, ForeignKey("adventures.adventure_id", ondelete="CASCADE"), nullable = False)
     caption = Column(String)
+    owner_id = Column(Integer, nullable= False)
 
 #----------------------------------[ Comments ]----------------------------------
 """

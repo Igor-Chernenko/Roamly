@@ -130,6 +130,7 @@ async def post_adventure_create(
             detail="Number of image files must match number of captions"
         )
 
+    #do a check if title and owner_id already exists
     new_adventure = Adventures(title=title, description=description, owner_id = current_user.user_id)
     db.add(new_adventure)
     db.commit()
@@ -142,7 +143,8 @@ async def post_adventure_create(
         new_image= Images(
             url = S3url,
             caption = caption[i],
-            adventure_id = new_adventure.adventure_id
+            adventure_id = new_adventure.adventure_id,
+            owner_id = current_user.user_id
             )
         db.add(new_image)
         db.commit()

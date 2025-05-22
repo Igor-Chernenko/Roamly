@@ -7,7 +7,7 @@ anything you would excpect the main file to do
 """
 
 from fastapi import FastAPI
-from app.routers import adventure, user
+from app.routers import adventure, user, comments, images
 
 app = FastAPI()
 
@@ -22,5 +22,18 @@ app.include_router(
 	prefix="/user",
 	tags= ['Users']
 	)
+
+app.include_router(
+	comments.router, 
+	prefix="/comment",
+	tags= ['Comments']
+	)
+
+app.include_router(
+	images.router, 
+	prefix="/image",
+	tags= ['Images']
+	)
+
 
 

@@ -9,7 +9,7 @@ describes the apps API data contracts (what is sent/received in API requests and
 from pydantic import BaseModel
 from pydantic import EmailStr
 from datetime import datetime
-
+from fastapi import UploadFile
 from typing import Optional
 #----------------------------------[ Utilities ]----------------------------------
 """
@@ -84,3 +84,17 @@ class AdventureReturn(AdventureBase):
     
 #----------------------------------[ Images ]----------------------------------
 
+class ImageBase(BaseModel):
+    caption: str
+    adventure_id: int
+
+class ImageReturn(ImageBase):
+    image_id: int
+    url: str
+    owner_id: int
+
+    class Config:
+        from_attributes = True
+
+class ImageChange(BaseModel):
+    caption: str
