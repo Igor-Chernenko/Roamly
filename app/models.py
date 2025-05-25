@@ -71,9 +71,9 @@ class Adventures(Base):
         UniqueConstraint('title', 'owner_id', name='uq_owner_title'),
         Index(
         "adventure_id_trgm_idx",
-        "adventure_id",
+        "title",
         postgresql_using="gin",
-        postgresql_ops={"username": "gin_trgm_ops"},
+        postgresql_ops={"title": "gin_trgm_ops"},
         )
         )
 

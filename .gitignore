@@ -7,3 +7,6 @@ roamly_venv
 #alembic files (dont ignore versions)
 roamly_alembic/__pycache__
 *.pyc
+
+#notes
+notes.md

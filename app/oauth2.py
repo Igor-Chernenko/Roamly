@@ -45,7 +45,7 @@ def create_access_token(data: dict):
     to_encode = data.copy()
 
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MIN)
-    to_encode.update({"exp": expire, "sub": str(data["user_id"])})
+    to_encode.update({"exp": expire, "user_id": str(data["user_id"])})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
     return encoded_jwt
@@ -71,7 +71,7 @@ class TokenData(BaseModel):
 def verify_token(token: str, credentials_exception):
     try:
         payload_data: dict = jwt.decode(token, SECRET_KEY, algorithms=ALGORITHM)
-        id: str = payload_data.get("sub")
+        id: str = payload_data.get("user_id")
 
         if id is None:
             raise credentials_exception

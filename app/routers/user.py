@@ -66,7 +66,7 @@ Returns:
 
 """
 
-@router.post("/", status_code=status.HTTP_200_OK, response_model=UserAuthReturn)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=UserAuthReturn)
 async def post_user(new_user_data: UserCreate, db: Session = Depends(get_gb)):
 
     if db.query(User).filter(User.email == new_user_data.email).first():
@@ -272,7 +272,7 @@ async def put_user_id(id: int, new_user_data: UserUpdate, db: Session = Depends(
 
 #----------------------------------[ POST /user/login ]----------------------------------
 
-@router.post("/login", response_model= Token)
+@router.post("/login", status_code=status.HTTP_200_OK, response_model= Token)
 async def post_user_login(login_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_gb)):
     user = authenticate_user(login_data.username, login_data.password, db)
     access_token = create_access_token(data = {"user_id":user.user_id})
