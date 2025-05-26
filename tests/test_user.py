@@ -7,14 +7,18 @@ test_user.py
 
 
 from fastapi import status, HTTPException
-from typing import List
+from typing import List, Optional
 import pytest
 from jose import jwt
 
 from app.config import settings
+from app.oauth2 import verify_password
+from app.models import Users
 from app import schemas
 from tests.testing_strings import long_email, sql_injections
+
 #----------------------------------[ TEST POST /user ]----------------------------------
+
 
 def test_create_user(client):
     user_create_json = {
@@ -22,7 +26,7 @@ def test_create_user(client):
         "username": "cool_username1234",
         "password": "password1235"
     }
-    result = client.post("/user/", json= user_create_json)
+    result = client.post("user/", json= user_create_json)
     response = schemas.UserAuthReturn(**result.json())
     assert result.status_code == status.HTTP_201_CREATED
     assert response.username == "cool_username1234"
@@ -45,7 +49,7 @@ def test_create_user_invalid_email(client, email, status_code):
         "password": "password123"
     }
 
-    result = client.post("/user/", json= bad_email_json)
+    result = client.post("user/", json= bad_email_json)
     assert result.status_code == status_code, f"failed on email: {email}"
 
 #to do: parameterize
@@ -60,7 +64,7 @@ def test_create_user_invalid_password(client):
             "password": password
         }
 
-        result = client.post("/user/", json= bad_password_json)
+        result = client.post("user/", json= bad_password_json)
         assert result.status_code == status.HTTP_400_BAD_REQUEST, f"failed on passowrd: {password}"
         assert result.json().get('detail') in ["password must have at least 8 characters", "password must have at least one number and one letter"]
 
@@ -125,4 +129,90 @@ def test_invalid_login_user(test_user, client, username, password, status_code):
     assert result.status_code == status_code
     assert result.json().get('detail') == "Password or Identification entered was wrong or does not exist"
 
+#----------------------------------[ TEST Delete /user/ ]----------------------------------
+def test_delete_user(test_user, session, client):
+    jwt = {"Authorization" : f"bearer {test_user['jwt_token']}"}
+    id = test_user["user_id"]
+    user_query = session.query(Users).filter(Users.user_id == id).all()
+    assert user_query
+    result = client.delete(f"user/{id}", headers=jwt)
+    assert result.status_code == status.HTTP_204_NO_CONTENT
+    user_query = session.query(Users).filter(Users.user_id == id).all()
+    assert not user_query
+
+
+#----------------------------------[ Test PUT /user/{id} ]----------------------------------
+@pytest.mark.parametrize("username, email, password",[
+    (None, None, "password123"),
+    (None, "email@gmail.com", None),
+    ("username", None, None),
+    ("username", "email@gmail.com", None),
+    ("username", "email@gmail.com", "password123"),
+    (None, "email@gmail.com", "password123")
+])
+def test_modify_user(test_user, session, client, username, email, password):
+    id = test_user['user_id']
+    test_put_data = {}
+    if username:
+        test_put_data["username"] = username
+    if email:
+        test_put_data["email"] = email
+    if password:
+        test_put_data["password"] = password
+    jwt = {"Authorization": f"bearer {test_user['jwt_token']}"}
+
+    result = client.put(f"user/{id}", json=test_put_data, headers=jwt)
+    assert result.status_code == status.HTTP_204_NO_CONTENT
+    user_query = session.query(Users).filter(Users.user_id == id).first()
+    if username: 
+        assert user_query.username == username
+    if email:
+        assert user_query.email == email
+    if password:
+        assert verify_password(password, user_query.password) == True
     
+@pytest.mark.parametrize("username, email, password, status_code",[
+    (None, None, "OnlyChars", status.HTTP_400_BAD_REQUEST),
+    (None, None, "short", status.HTTP_400_BAD_REQUEST),
+    (None, None, "123456789", status.HTTP_400_BAD_REQUEST),
+    (None, "emailgmailcom", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
+    (None, "emailgmail.com", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
+    (None, "email@gmailcom", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
+    (None, "a@.com", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
+    (None, "@r.com", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
+    (None, "a@@gmail.com", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
+    (None, "$*)%)_/#$%^@@gmail.com", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
+    (None, "@gmail.com", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
+    (None, long_email(), None, status.HTTP_422_UNPROCESSABLE_ENTITY)
+])
+def test_invalid_modify_user(test_user, session, client, username, email, password, status_code):
+    id = test_user['user_id']
+    test_put_data = {}
+    if username:
+        test_put_data["username"] = username
+    if email:
+        test_put_data["email"] = email
+    if password:
+        test_put_data["password"] = password
+    jwt = {"Authorization": f"bearer {test_user['jwt_token']}"}
+
+    result = client.put(f"/user/{id}", json=test_put_data, headers=jwt)
+    assert result.status_code == status_code
+
+#----------------------------------[ Test get /user/{id} ]----------------------------------
+
+def test_get_user(client, test_user):
+    id = test_user['user_id']
+    result = client.get(f"user/{id}")
+    user = schemas.UserReturn(**result.json())
+    assert user.email == test_user["email"]
+    assert user.username == test_user["username"]
+    assert user.user_id == id
+    assert user.created_at
+
+
+def test_invalid_get_user(client, test_user):
+    id = 124
+    result = client.get(f"user/{id}")
+    assert result.status_code == status.HTTP_404_NOT_FOUND
+    assert result.json().get("detail") == f"could not find user with id={id}"

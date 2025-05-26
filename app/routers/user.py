@@ -80,8 +80,7 @@ async def post_user(new_user_data: UserCreate, db: Session = Depends(get_gb)):
             detail="There is already an acount with that username"
         )
     
-    check_password_requirments(new_user_data.password)
-
+    check_password_requirments(new_user_data.password) 
     hashed_password = pwd_context.hash(new_user_data.password)
     new_user_data.password = hashed_password
 
