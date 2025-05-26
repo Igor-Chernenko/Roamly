@@ -4,7 +4,6 @@ comment.py
 =+=+=+=+=+=+=+=+=+=+=+=+=+=+=[ comment Router ]=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
 handles comment CRUD operations for the api
 
-Version 0.0.0
 """
 from fastapi import APIRouter, HTTPException, status
 router = APIRouter()

@@ -4,7 +4,7 @@ oauth2.py
 =+=+=+=+=+=+=+=+=+=+=+=+=+=+=[ oauth2.py ]=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
 handles authentication using JWT's (JSON Web Tokens) 
 
-Version 0.1.0
+
 """
 
 from jose import JWTError, jwt

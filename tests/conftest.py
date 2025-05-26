@@ -1,3 +1,19 @@
+"""
+conftest.py
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=[ fixtures for testing ]=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+
+-allows to define pytest fixtures for this pytest package
+
+-Code sets up the test communication with the testing database:
+
+Creates a client pytest fixture that replaces the get_gb object used by the main code to be a testing object that works
+with the testing database, to do this it calls the session fixture which drops the current testing database
+to reset it and build a new one with the neccessary stuff like gin for trigram indexing on fuzzy searches for adventure title
+to mimic real database.
+"""
+
+
 from fastapi.testclient import TestClient
 import pytest
 from app.main import app
@@ -5,6 +21,7 @@ from app.config import settings
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from app.database import get_gb, Base
+from fastapi import status, HTTPException
 
 #----------------------------------[ CREATE TEST USER DATABASE]----------------------------------
 SQLALCHEMY_DATABASE_URL = f"postgresql://{settings.DATABASE_USERNAME}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOSTNAME}/{settings.DATABASE_NAME}_test"
@@ -44,9 +61,21 @@ def client(session):
         try:
             yield session
         finally:
-            #session.close()
-            pass
+            session.close()
+
     app.dependency_overrides[get_gb] = override_get_gb
     yield TestClient(app)
 
-    
+@pytest.fixture
+def test_user(client):
+    user_data = {
+        "email": "test_user@gmail.com",
+        "username": "test_username",
+        "password" : "password123"
+    }
+    result = client.post('/user', json= user_data)
+    assert result.status_code == status.HTTP_201_CREATED
+    new_user = result.json() 
+    new_user["password"] = user_data["password"]
+    #add password to fixture for testing
+    return new_user

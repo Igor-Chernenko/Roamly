@@ -4,7 +4,6 @@ adventure.py
 =+=+=+=+=+=+=+=+=+=+=+=+=+=+=[ adventure Router ]=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
 handles Adventure CRUD operations for the api
 
-Version 0.2.1
 """
 
 from fastapi import APIRouter, Depends

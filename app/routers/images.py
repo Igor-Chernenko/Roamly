@@ -1,10 +1,9 @@
 """
 images.py
 
-=+=+=+=+=+=+=+=+=+=+=+=+=+=+=[ comment Router ]=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=[ image Router ]=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
 handles image CRUD operations for the api
 
-Version 0.0.0
 """
 from fastapi import APIRouter, HTTPException, status, Depends, Form, File,  UploadFile
 from sqlalchemy.orm import Session

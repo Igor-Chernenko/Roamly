@@ -97,7 +97,8 @@ async def post_user(new_user_data: UserCreate, db: Session = Depends(get_gb)):
         "jwt_token":access_token,
         "created_at":new_user.created_at,
         "email":new_user.email,
-        "username":new_user.username
+        "username":new_user.username,
+        "user_id": new_user.user_id
     }
 
 #----------------------------------[ GET /user ]----------------------------------

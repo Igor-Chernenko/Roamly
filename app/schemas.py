@@ -40,6 +40,7 @@ class UserLogin(BaseModel):
     password: str
 
 class UserAuthReturn(UserBase):
+    user_id: int
     jwt_token: str
     created_at: datetime
 
