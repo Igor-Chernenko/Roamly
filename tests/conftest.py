@@ -17,6 +17,7 @@ to mimic real database.
 from fastapi.testclient import TestClient
 import pytest
 from app.main import app
+from app import models
 from app.config import settings
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -65,7 +66,7 @@ def client(session):
 
     app.dependency_overrides[get_gb] = override_get_gb
     yield TestClient(app)
-
+#----------------------------------[ CREATE USER IN DATABASE]----------------------------------
 @pytest.fixture
 def test_user(client):
     user_data = {
@@ -79,3 +80,44 @@ def test_user(client):
     new_user["password"] = user_data["password"]
     #add password to fixture for testing
     return new_user
+
+#----------------------------------[ CREATE ADVENTURES IN DATABASE]----------------------------------
+
+@pytest.fixture
+def test_adventures(test_user, session):
+    other_user = models.Users(
+        username = "otherUser",
+        email = "otherEmail@gmail.com",
+        password= "irrelevant"
+    )
+    session.add(other_user)
+    session.commit()
+
+    adventure_data = [
+        {
+                "title": "new adventure part 1",
+                "description": "adventure description 1",
+                "owner_id": test_user['user_id']
+        },
+        {
+                "title": "new adventure part 2",
+                "description": "adventure description 2",
+                "owner_id": test_user['user_id']
+        },
+        {
+                "title": "new adventure part 3",
+                "description": "adventure description 3",
+                "owner_id": test_user['user_id']
+        },
+        {
+                "title": "other users adventure",
+                "description": "some description",
+                "owner_id": 2
+        }
+    ]
+
+    adventure_map = [models.Adventures(**data) for data in adventure_data]
+    session.add_all(adventure_map)
+    session.commit()
+
+    return session.query(models.Adventures).all()
