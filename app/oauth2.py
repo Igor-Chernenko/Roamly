@@ -33,7 +33,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 """
 Create access token based off of user creation/login payload, used to confirm user identity
 
-input: data (json including user creation/login details)
+input: data (json including user creation/login details), if in testing state will create
+an already expired access token
 
 process:
     - finds the time (ACCESS_TOKEN_EXPIRE_MIN) from when called and adds it to payload
@@ -41,10 +42,14 @@ process:
 
 returns: jwt string signed with SECRET_KEY, and ALGORITHM
 """
-def create_access_token(data: dict):
+def create_access_token(data: dict, testing_state:bool = False):
     to_encode = data.copy()
+    
+    if not testing_state:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MIN)
+    if testing_state:
+        expire = datetime.now(timezone.utc) - timedelta(minutes=ACCESS_TOKEN_EXPIRE_MIN)
 
-    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MIN)
     to_encode.update({"exp": expire, "user_id": str(data["user_id"])})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 

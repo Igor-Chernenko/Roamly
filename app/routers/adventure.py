@@ -35,7 +35,11 @@ Return: Returns list of AdventureReturn pydantic schemas
 """
 @router.get("/",response_model = List[AdventureReturn])
 async def get_adventure(db: Session = Depends(get_gb), limit:int=5, skip:int = 0, search:Optional[str]=None):
-    
+    if limit<1:
+        raise HTTPException(
+            status_code= status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail= "limit parameter may not be less than 1 if included"
+        )
     if search:
         similarity_amount = 0.2
         adventures = (
@@ -72,7 +76,11 @@ Return: Returns AdventureReturn pydantic schema if id is found
 @router.get("/{id}",response_model=AdventureReturn)
 async def get_adventure_id(id: int, db: Session = Depends(get_gb)):
     adventure_query = db.query(Adventures).filter(Adventures.adventure_id == id).first()
-    
+    if id<1:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"id cannot be less than 1"
+        )
     if not adventure_query:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -122,14 +130,36 @@ async def post_adventure_create(
     db: Session = Depends(get_gb),
     current_user: Users = Depends(get_current_user)
 ):
+    if len(title) < 5:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="There must be at least 5 characters in the title"
+        )
     
-    if len(images) != len(caption):
+    num_valid_captions = 0
+    for cap in caption:
+        if len(cap) >0 :
+            num_valid_captions+=1
+
+    if len(images) != num_valid_captions:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Number of image files must match number of captions"
         )
+    if len(images) >10:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Number of image files must be under or equal to 10"
+        )
 
     #do a check if title and owner_id already exists
+    title_check = db.query(Adventures).filter(Adventures.title == title and Adventures.owner_id == current_user.user_id).first()
+    if title_check:
+        raise HTTPException(
+            status_code= status.HTTP_409_CONFLICT,
+            detail="User has already posted an adventure with this title"
+        )
+
     new_adventure = Adventures(title=title, description=description, owner_id = current_user.user_id)
     db.add(new_adventure)
     db.commit()
@@ -167,12 +197,6 @@ Return:
 """
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_adventure_id(id: int, db: Session = Depends(get_gb), current_user: Users = Depends(get_current_user)):
-
-    if current_user.owner_id != id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permision to perform this action"
-        )
     
     queried_adventure = db.query(Adventures).filter(Adventures.adventure_id == id)
     adventure = queried_adventure.first()
@@ -181,6 +205,12 @@ async def delete_adventure_id(id: int, db: Session = Depends(get_gb), current_us
         raise HTTPException(
             status_code= status.HTTP_404_NOT_FOUND,
             detail=f"Adventure with id={id} could not be found"
+        )
+    
+    if adventure.owner_id != current_user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to perform this action"
         )
     
     queried_adventure.delete(synchronize_session= False)
@@ -205,6 +235,23 @@ notes:
 async def update_adventure_id(id: int, new_adventure: AdventureUpdate, db: Session = Depends(get_gb), current_user: Users = Depends(get_current_user)):
     queried_adventure = db.query(Adventures).filter(Adventures.adventure_id == id)
 
+    update_data = new_adventure.model_dump(exclude_unset=True)
+    if not update_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="no data provided for update"
+    )
+
+    if new_adventure.title:
+        title_query = db.query(Adventures).filter(
+        (Adventures.title == new_adventure.title) & (Adventures.owner_id == current_user.user_id)
+        ).first()
+
+        if title_query:
+            raise HTTPException(
+                status_code= status.HTTP_409_CONFLICT,
+                detail= "User has already made an adventure with this title"
+            )
     
     if queried_adventure.first() == None:
         raise HTTPException(

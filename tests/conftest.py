@@ -121,3 +121,34 @@ def test_adventures(test_user, session):
     session.commit()
 
     return session.query(models.Adventures).all()
+
+
+#----------------------------------[ CREATE IMAGES IN DATABASE]----------------------------------
+
+@pytest.fixture
+def test_images(test_user, session, test_adventures):
+    images = [
+        {
+            "url" :"http://some-url.com/123456789",
+            "adventure_id" : 1,
+            "caption" : "some caption",
+            "owner_id" : test_user['user_id']
+        },
+        {
+            "url" :"http://some-url.com/987654321",
+            "adventure_id" : 4,
+            "caption" : "some caption",
+            "owner_id" : test_user['user_id']
+        },
+        {
+            "url" :"http://some-url.com/9999999",
+            "adventure_id" : 1,
+            "caption" : "some caption",
+            "owner_id" : 2
+        },
+
+    ]
+    image_map = [models.Images(**image) for image in images]
+    session.add_all(image_map)
+    session.commit()
+    return image_map
