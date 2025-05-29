@@ -28,5 +28,4 @@ jobs:
       - name: test with pytest
         run: |
           pip install pytest
-          pip freeze > requirments.txt
           pytest
