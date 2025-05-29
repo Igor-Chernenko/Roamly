@@ -7,7 +7,19 @@ on:
     branches: ["main"]
 
 jobs:
-  job1: 
+  job1:
+    enviroment: Testing
+    env: 
+      DATABASE_HOSTNAME: ${{secrets.DATABASE_HOSTNAME}}
+      DATABASE_PORT: ${{secrets.DATABASE_PORT}}
+      DATABASE_PASSWORD: ${{secrets.DATABASE_PASSWORD}}
+      DATABASE_USERNAME: ${{secrets.DATABASE_USERNAME}}
+      DATABASE_NAME: ${{secrets.DATABASE_NAME}}
+      
+      SECRET_KEY: ${{secrets.SECRET_KEY}}
+      ALGORITHM: ${{secrets.ALGORITHM}}
+      ACCESS_TOKEN_EXPIRE_MIN: ${{secrets.ACCESS_TOKEN_EXPIRE_MIN}}
+
     runs-on: ubuntu-latest
     steps:
 
