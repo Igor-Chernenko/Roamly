@@ -8,7 +8,7 @@ on:
 
 jobs:
   job1:
-    enviroment: Testing
+    environment: Testing
     env: 
       DATABASE_HOSTNAME: ${{secrets.DATABASE_HOSTNAME}}
       DATABASE_PORT: ${{secrets.DATABASE_PORT}}
