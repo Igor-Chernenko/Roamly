@@ -10,13 +10,22 @@ jobs:
   job1: 
     runs-on: ubuntu-latest
     steps:
+
       - name: pulling git repo
         uses: actions/checkout@v4
+
       - name: install python version 3.13.2
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+
       - name: update pip
         run: python -m pip install --upgrade pip
+
       - name: install all dependencies
         run: pip install -r requirments.txt
+
+      - name: test with pytest
+        run: |
+          pip install pytest
+          pytest
