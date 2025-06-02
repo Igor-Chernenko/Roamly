@@ -45,8 +45,9 @@ class UserAuthReturn(UserBase):
     created_at: datetime
 
     #neccessary to allow pydantic to use SQLAlchemy ORM models
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
@@ -57,8 +58,9 @@ class UserReturn(UserBase):
     user_id: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
 #----------------------------------[ Adventures ]----------------------------------
 """
@@ -79,8 +81,9 @@ class AdventureReturn(AdventureBase):
     created_at: datetime
     owner: UserReturn
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
     
 #----------------------------------[ Images ]----------------------------------
@@ -94,8 +97,23 @@ class ImageReturn(ImageBase):
     url: str
     owner_id: int
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
 class ImageChange(BaseModel):
     caption: str
+
+#----------------------------------[ Comments ]----------------------------------
+
+class CommentBase(BaseModel):
+    comment : str
+
+class CommentPost(CommentBase):
+    pass
+
+class CommentReturn(CommentBase):
+    comment_id: int
+    owner_id: int
+    created_at: datetime
+

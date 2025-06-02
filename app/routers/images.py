@@ -30,9 +30,9 @@ returns:
     - HTTP 403 if the user is not the same as the owner of the image
     - if successfull then it returns a List of all images in adventure
 """
-@router.post("/", status_code= status.HTTP_200_OK, response_model= List[ImageReturn])
+@router.post("/{adventure_id}/images", status_code= status.HTTP_200_OK, response_model= List[ImageReturn])
 async def post_image_adventure_id(
-    adventure_id: int = Form(...),
+    adventure_id: int,
     caption: str = Form(...),
     image: UploadFile = File(...),
     db: Session = Depends(get_gb),
@@ -88,8 +88,8 @@ returns:
     - if successfull then it returns a List of all images in adventure
 
 """
-@router.get("/{adventure_id}", response_model= List[ImageReturn])
-async def get_image_id(adventure_id: int, db: Session = Depends(get_gb)):
+@router.get("/images/{adventure_id}", response_model= List[ImageReturn])
+async def get_adventure_images(adventure_id: int, db: Session = Depends(get_gb)):
 
     if adventure_id<1:
         raise HTTPException(
@@ -118,14 +118,14 @@ returns:
     - HTTP 403 if the user is not the same as the owner of the image
     - if successfull then it returns a List of all images in adventure
 """
-@router.delete("/{image_id}", status_code= status.HTTP_202_ACCEPTED, response_model= List[ImageReturn])
+@router.delete("/images/{image_id}", status_code= status.HTTP_202_ACCEPTED, response_model= List[ImageReturn])
 async def delete_id(image_id: int, db: Session = Depends(get_gb), current_user: User = Depends(get_current_user)):
-    image_query = db.query(Images).filter(Images.image_id == image_id)
     if image_id<1:
         raise HTTPException(
             status_code= status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="No images with id less than 1"
         )
+    image_query = db.query(Images).filter(Images.image_id == image_id)
     image = image_query.first()
     if not image:
         raise HTTPException(
@@ -156,7 +156,7 @@ returns:
     - HTTP 403 if the user is not the same as the owner of the image
     - if successfull then it returns a List of all images in adventure
 """
-@router.put("/{image_id}", status_code=status.HTTP_200_OK, response_model=List[ImageReturn])
+@router.put("/images/{image_id}", status_code=status.HTTP_200_OK, response_model=List[ImageReturn])
 async def put_image_id(image_id: int, new_caption: ImageChange, db: Session = Depends(get_gb), current_user: Session = Depends(get_current_user)):
     queried_images = db.query(Images).filter(Images.image_id == image_id)
     image = queried_images.first()

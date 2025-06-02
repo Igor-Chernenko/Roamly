@@ -24,14 +24,14 @@ app.include_router(
 	)
 
 app.include_router(
-	comments.router, 
-	prefix="/comment",
-	tags= ['Comments']
-	)
+    comments.router, 
+    prefix="/adventure",
+    tags=['Comments']
+)
 
 app.include_router(
 	images.router, 
-	prefix="/image",
+	prefix="/adventure",
 	tags= ['Images']
 	)
 

@@ -24,7 +24,7 @@ def test_post_image_id(client, session, test_adventures, test_user, adventure_id
         "caption":  caption
     }
     files = {"image":  image}
-    result = client.post("image/", data=data, files=files, headers=jwt)
+    result = client.post(f"adventure/{adventure_id}/images", data=data, files=files, headers=jwt)
     assert result.status_code == status.HTTP_200_OK
     image_query = session.query(models.Images).filter(models.Images.adventure_id == adventure_id).first()
     assert image_query.caption == caption
@@ -43,7 +43,7 @@ def test_invalid_post_image_id(client, session, test_adventures, test_user, adve
         "caption":  caption
     }
     files = {"image":  image}
-    result = client.post("image/", data=data, files=files, headers=jwt)
+    result = client.post(f"adventure/{adventure_id}/images", data=data, files=files, headers=jwt)
     assert result.status_code == status_code
     image_query = session.query(models.Images).filter(models.Images.adventure_id == adventure_id).first()
     assert not image_query
@@ -56,7 +56,7 @@ def test_put_images(client, test_user, test_images, session, test_adventures):
     }
     jwt = {"Authorization" : f"bearer {test_user["jwt_token"]}"}
     id = test_user["user_id"]
-    result = client.put(f"image/{id}", json= image_change, headers=jwt)
+    result = client.put(f"adventure/images/{id}", json= image_change, headers=jwt)
     assert result.status_code == status.HTTP_200_OK
     assert len(result.json()) == 2 
     image_query = session.query(models.Images).filter(models.Images.caption == "changed caption").first()
@@ -68,7 +68,7 @@ def test_invalid_user_put_images(client, test_user, test_images, session, test_a
     }
     jwt = {"Authorization" : f"bearer {test_user["jwt_token"]}"}
     id = test_user["user_id"]
-    result = client.put(f"image/3", json= image_change, headers=jwt)
+    result = client.put(f"adventure/images/3", json= image_change, headers=jwt)
     assert result.status_code == status.HTTP_401_UNAUTHORIZED
 
 #----------------------------------[ TEST DELETE /image ]----------------------------------
@@ -78,7 +78,7 @@ def test_delete_image_success(client, test_user, test_images, session):
     adventure_id = test_images[0].adventure_id
     jwt = {"Authorization": f"bearer {test_user['jwt_token']}"}
 
-    result = client.delete(f"/image/{image_id}", headers=jwt)
+    result = client.delete(f"adventure/images/{image_id}", headers=jwt)
     assert result.status_code == status.HTTP_202_ACCEPTED
     assert all(image["adventure_id"] == adventure_id for image in result.json())
 
@@ -92,21 +92,21 @@ def test_delete_image_success(client, test_user, test_images, session):
 ])
 def test_delete_image_invalid(client, test_user, image_id, status_code):
     jwt = {"Authorization": f"bearer {test_user['jwt_token']}"}
-    result = client.delete(f"/image/{image_id}", headers=jwt)
+    result = client.delete(f"adventure/images/{image_id}", headers=jwt)
     assert result.status_code == status_code
 
 def test_delete_image_unauthorized(client, test_user, test_images, test_adventures):
     user_id = 2
     wrong_user_jwt = create_access_token(data= {"user_id":2})
     jwt_header = {"Authorization": f"bearer {wrong_user_jwt}"}
-    result = client.delete(f"/image/1", headers= jwt_header)
+    result = client.delete(f"adventure/images/1", headers= jwt_header)
     assert result.status_code == status.HTTP_401_UNAUTHORIZED
 
 #----------------------------------[ TEST GET /image ]----------------------------------
 
 def test_get_images_success(client, test_images):
     adventure_id = test_images[0].adventure_id
-    result = client.get(f"/image/{adventure_id}")
+    result = client.get(f"/adventure/images/{adventure_id}")
     assert result.status_code == status.HTTP_200_OK
     assert all(image["adventure_id"] == adventure_id for image in result.json())
 
@@ -116,5 +116,5 @@ def test_get_images_success(client, test_images):
     (999, status.HTTP_404_NOT_FOUND),
 ])
 def test_get_images_invalid(client, adventure_id, status_code):
-    result = client.get(f"/image/{adventure_id}")
+    result = client.get(f"/adventure/images/{adventure_id}")
     assert result.status_code == status_code

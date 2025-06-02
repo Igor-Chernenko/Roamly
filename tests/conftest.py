@@ -152,3 +152,33 @@ def test_images(test_user, session, test_adventures):
     session.add_all(image_map)
     session.commit()
     return image_map
+
+#----------------------------------[ CREATE COMMENTS IN DATABASE]----------------------------------
+@pytest.fixture
+def test_comments(client, session, test_adventures, test_user):
+    comments = [
+        {
+            "comment":"some sample comment",
+            "adventure_id":1,
+            "owner_id": test_user['user_id']
+        },
+        {
+            "comment":"some sample comment",
+            "adventure_id":1,
+            "owner_id": test_user['user_id']
+        },
+        {
+            "comment":"some sample comment",
+            "adventure_id":1,
+            "owner_id": test_user['user_id']
+        },
+        {
+            "comment":"some sample comment",
+            "adventure_id":2,
+            "owner_id": test_user['user_id']
+        },
+    ]
+    image_map = [models.Comments(**comment) for comment in comments]
+    session.add_all(image_map)
+    session.commit()
+    return image_map

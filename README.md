@@ -25,7 +25,7 @@ Roamly is meant to be more than just another Instagram clone project, its my tra
       - Captions
     - CI/CD Pipline with GitHub Actions
     - Thouroghly tested with PyTest
-    - Fuzzy Searching for titles
+    - Fuzzy Searching for titles with trigrams
   ### Planned:
     - Frontend
     - Location (search, implementation, etc)
