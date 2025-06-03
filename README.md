@@ -23,6 +23,13 @@ Roamly is meant to be more than just another Instagram clone project, its my tra
       - Description
       - Images
       - Captions
+    - Create acounts/login with:
+      - Email/ Username
+      - Encrypted Password
+    - Edit Adventures by:
+      - Adding Images
+      - Changing/Removing details (caption/descriptions/images)
+    - Comment on others Adventures
     - CI/CD Pipline with GitHub Actions
     - Thouroghly tested with PyTest
     - Fuzzy Searching for titles with trigrams
