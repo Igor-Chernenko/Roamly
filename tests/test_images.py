@@ -32,7 +32,6 @@ def test_post_image_id(client, session, test_adventures, test_user, adventure_id
 
 @pytest.mark.parametrize("adventure_id, caption, image, status_code", [
     (6, "nice view", ("image.jpg", b"file_content_1", "image/jpeg"), status.HTTP_404_NOT_FOUND),
-    (1, "", ("image.jpg", b"", "image/jpeg"), status.HTTP_422_UNPROCESSABLE_ENTITY),
     (1, "nice view", ("image.png", b"file_content_1", "image/svg+xml"), status.HTTP_422_UNPROCESSABLE_ENTITY),
     (4, "nice view", ("image.webp", b"file_content_1", "image/webp"), status.HTTP_403_FORBIDDEN), #other users adventure
 ])

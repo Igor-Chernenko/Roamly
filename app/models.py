@@ -129,3 +129,4 @@ class Comments(Base):
     adventure_id = Column(Integer, ForeignKey("adventures.adventure_id", ondelete="CASCADE"), nullable = False)
     created_at = Column(TIMESTAMP(timezone=True),nullable = False, server_default=text("now()"))
     comment = Column(String, nullable = False)
+    owner = relationship("Users")

@@ -10,11 +10,19 @@ from fastapi import APIRouter, Depends
 from typing import List, Optional
 from sqlalchemy.orm import Session, joinedload
 from app.database import get_gb
-from sqlalchemy import func
+from sqlalchemy import func, desc
+import tempfile
+import os
+import boto3
+from botocore.exceptions import ClientError
+from urllib.parse import urlparse
 
 from app.schemas import AdventureReturn, AdventureUpdate
 from app.models import Adventures, Images, Users
 from app.oauth2 import get_current_user
+from app.aws import upload_file
+from app.config import settings
+
 
 from fastapi import HTTPException, status, UploadFile, File, Form
 
@@ -55,6 +63,7 @@ async def get_adventure(db: Session = Depends(get_gb), limit:int=5, skip:int = 0
     else:
         queried_adventures = (
             db.query(Adventures)
+            .order_by(desc(Adventures.created_at))
             .limit(limit)
             .offset(skip)
             .all()
@@ -166,18 +175,34 @@ async def post_adventure_create(
     db.refresh(new_adventure)
 
     for i, image in enumerate(images):
-        #S3url = await store_image(image) // to be implemented
-        url_number = randint(1,9999)
-        S3url = f"http://fake_url.com/{url_number}"
-        new_image= Images(
-            url = S3url,
-            caption = caption[i],
-            adventure_id = new_adventure.adventure_id,
-            owner_id = current_user.user_id
+        # Save to temp file
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            tmp.write(await image.read())
+            tmp_path = tmp.name
+
+        # Generate random object name
+        object_name = f"adventures/{new_adventure.adventure_id}/{randint(1,999999)}_{image.filename}"
+
+        # Upload to S3
+        upload_success = upload_file(tmp_path, settings.S3_BUCKET_NAME, object_name)
+        os.remove(tmp_path)
+
+        if not upload_success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to upload image to S3"
             )
+
+        S3url = f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{object_name}"
+
+        new_image = Images(
+            url=S3url,
+            caption=caption[i],
+            adventure_id=new_adventure.adventure_id,
+            owner_id=current_user.user_id
+        )
         db.add(new_image)
-        db.commit()
-        db.refresh(new_image)
+    db.commit()
 
     return new_adventure
 
@@ -212,6 +237,26 @@ async def delete_adventure_id(id: int, db: Session = Depends(get_gb), current_us
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to perform this action"
         )
+    
+    images = db.query(Images).filter(Images.adventure_id == id).all()
+    s3 = boto3.client(
+        "s3",
+        region_name=settings.AWS_REGION,
+        aws_access_key_id=settings.AWS_ACCESS_KEY,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
+    )
+
+    for image in images:
+        try:
+            parsed = urlparse(image.url)
+            bucket = parsed.netloc.split('.')[0]
+            key = parsed.path.lstrip('/')
+            s3.delete_object(Bucket=bucket, Key=key)
+        except ClientError as e:
+            print(f"Warning: could not delete {image.url} from S3: {e}")
+
+    #  Remove images from the database
+    db.query(Images).filter(Images.adventure_id == id).delete()
     
     queried_adventure.delete(synchronize_session= False)
     db.commit()

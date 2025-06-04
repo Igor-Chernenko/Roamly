@@ -9,12 +9,22 @@ from fastapi import APIRouter, HTTPException, status, Depends, Form, File,  Uplo
 from sqlalchemy.orm import Session
 from typing import List
 from random import randint
+import tempfile
+import os
+from urllib.parse import urlparse
+import boto3
 
 from app.schemas import ImageReturn, ImageChange
 from app.models import Users as User, Adventures, Images
 from app.oauth2 import get_gb, get_current_user
+from app.aws import upload_file, delete_file_from_s3
+from app.config import settings
+
+BUCKET_NAME = settings.S3_BUCKET_NAME
+AWS_REGION = settings.AWS_REGION
 
 router = APIRouter()
+
 
 #----------------------------------[ POST /image ]----------------------------------
 """
@@ -30,7 +40,7 @@ returns:
     - HTTP 403 if the user is not the same as the owner of the image
     - if successfull then it returns a List of all images in adventure
 """
-@router.post("/{adventure_id}/images", status_code= status.HTTP_200_OK, response_model= List[ImageReturn])
+@router.post("/{adventure_id}/images", status_code=status.HTTP_200_OK, response_model=List[ImageReturn])
 async def post_image_adventure_id(
     adventure_id: int,
     caption: str = Form(...),
@@ -38,42 +48,47 @@ async def post_image_adventure_id(
     db: Session = Depends(get_gb),
     current_user: User = Depends(get_current_user)
 ):
-    #check valid MIME type
     valid_MIME = ["image/jpeg", "image/png", "image/webp"]
     if image.content_type.lower() not in valid_MIME:
         raise HTTPException(
-            status_code= status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Image type not supported"
         )
-    
-    #Later implement actual check, right now it just checks images size
-    if image.size < 10:
+
+    # Temporarily store the uploaded file
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        tmp.write(await image.read())
+        tmp_path = tmp.name
+
+    object_name = f"adventures/{adventure_id}/{randint(1,999999)}_{image.filename}"
+
+    upload_success = upload_file(tmp_path, BUCKET_NAME, object_name)
+    os.remove(tmp_path)  # Clean up temp file
+
+    if not upload_success:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="image is too small to be considered valid"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to upload image to S3"
         )
-    
+
+    S3url = f"https://{BUCKET_NAME}.s3.amazonaws.com/{object_name}"
+
     adventure = db.query(Adventures).filter(Adventures.adventure_id == adventure_id).first()
     if not adventure:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"adventure with id={adventure_id} could not be found"
         )
-    
+
     if adventure.owner_id != current_user.user_id:
         raise HTTPException(
-            status_code= status.HTTP_403_FORBIDDEN,
-            detail= f"You are not permitted to add photos to this adventure"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not permitted to add photos to this adventure"
         )
-    
-    #S3url = await store_image(image) // to be implemented
-    url_number = randint(1,9999)
-    S3url = f"http://fake_url.com/{url_number}"
 
-    new_image = Images(adventure_id = adventure_id, caption = caption, url= S3url, owner_id = current_user.user_id)
+    new_image = Images(adventure_id=adventure_id, caption=caption, url=S3url, owner_id=current_user.user_id)
     db.add(new_image)
     db.commit()
-
     adventure_images = db.query(Images).filter(Images.adventure_id == adventure_id).all()
     return adventure_images
 
@@ -127,6 +142,7 @@ async def delete_id(image_id: int, db: Session = Depends(get_gb), current_user: 
         )
     image_query = db.query(Images).filter(Images.image_id == image_id)
     image = image_query.first()
+    
     if not image:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -137,6 +153,15 @@ async def delete_id(image_id: int, db: Session = Depends(get_gb), current_user: 
             status_code= status.HTTP_401_UNAUTHORIZED,
             detail= f"You are not permitted to delete photos from this adventure"
         )
+
+    try:
+        delete_file_from_s3(image.url)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete image from S3: {e}"
+        )
+
     adventure_id = image.adventure_id
     image_query.delete(synchronize_session= False)
     db.commit()
@@ -170,7 +195,7 @@ async def put_image_id(image_id: int, new_caption: ImageChange, db: Session = De
     if image.owner_id != current_user.user_id:
         raise HTTPException(
             status_code= status.HTTP_401_UNAUTHORIZED,
-            detail= f"You are not permitted to delete photos from this adventure"
+            detail= f"You are not permitted to edit photos from this adventure"
         )
     
     adventure_id = image.adventure_id

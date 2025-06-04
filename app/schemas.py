@@ -57,7 +57,8 @@ class UserUpdate(BaseModel):
 class UserReturn(UserBase):
     user_id: int
     created_at: datetime
-
+    #includes:    email: EmailStr
+    #             username: str
     model_config = {
         "from_attributes": True
     }
@@ -116,5 +117,5 @@ class CommentReturn(CommentBase):
     comment_id: int
     owner_id: int
     created_at: datetime
+    owner: UserReturn
 
-#----------------------------------[ Comments ]----------------------------------

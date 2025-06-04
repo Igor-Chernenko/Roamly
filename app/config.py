@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MIN: int
 
+    AWS_REGION: str
+    S3_BUCKET_NAME: str
+    AWS_ACCESS_KEY: str
+    AWS_SECRET_ACCESS_KEY: str
+    
     class Config:
         env_file = ".env"
 

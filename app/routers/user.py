@@ -4,7 +4,6 @@ user.py
 =+=+=+=+=+=+=+=+=+=+=+=+=+=+=[ user Router ]=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
 handles user CRUD operations for the api
 
-Version 0.5.0
 """
 
 from fastapi import APIRouter, HTTPException, status, Depends
@@ -14,10 +13,10 @@ from sqlalchemy import text
 from typing import List, Optional
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 
-from app.schemas import UserCreate, UserAuthReturn, UserReturn, UserUpdate, Token, UserLogin
+from app.schemas import UserCreate, UserAuthReturn, UserReturn, UserUpdate, Token, UserLogin, AdventureReturn
 from app.database import get_gb
 from app.oauth2 import get_current_user, create_access_token, authenticate_user
-from app.models import Users as User
+from app.models import Users as User, Adventures
 
 router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -280,3 +279,38 @@ async def post_user_login(login_data: OAuth2PasswordRequestForm = Depends(), db:
         "access_token": access_token,
         "token_type": "bearer"
     }
+
+#----------------------------------[ GET /user/{id}/posts ]----------------------------------
+"""
+GET request to retrieve a list of adventures for a specific user
+
+Inputs:
+    - id: ID of the user whose adventures are being retrieved
+
+Process:
+    - Confirms user exists
+    - Checks if the current user has permission to view the adventures (optional: currently allows public access)
+    - Queries all adventures where the user is the owner
+
+Returns:
+    - List of AdventureReturn objects
+    - HTTP 404 if user does not exist
+"""
+@router.get("/{id}/adventures", status_code=status.HTTP_200_OK, response_model=List[AdventureReturn])
+async def get_user_adventures(
+    id: int,
+    db: Session = Depends(get_gb),
+    current_user: User = Depends(get_current_user)
+):
+    # Ensure the user exists
+    user_exists = db.query(User).filter(User.user_id == id).first()
+    if not user_exists:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Could not find user with id={id}"
+        )
+
+    # Get adventures for that user
+    adventures = db.query(Adventures).filter(Adventures.owner_id == id).all()
+
+    return adventures
