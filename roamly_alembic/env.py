@@ -9,10 +9,15 @@ from app.database import Base
 from app.config import settings
 from app import models
 
+print("Loaded settings:")
+print("Host:", settings.DATABASE_HOSTNAME)
+print("User:", settings.DATABASE_USERNAME)
+print("Password:", settings.DATABASE_PASSWORD)
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-config.set_main_option("sqlalchemy.url", f"postgresql://{settings.DATABASE_USERNAME}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOSTNAME}/{settings.DATABASE_NAME}")
+config.set_main_option("sqlalchemy.url", f"postgresql+psycopg2://{settings.DATABASE_USERNAME}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOSTNAME}:{settings.DATABASE_PORT}/{settings.DATABASE_NAME}")
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -62,6 +67,7 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    print("Using DB:", config.get_main_option("sqlalchemy.url"))
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",

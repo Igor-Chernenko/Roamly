@@ -1,4 +1,4 @@
-// 📁 File: frontend/src/App.js
+
 import React, { useEffect, useState, useCallback } from "react";
 import {
   BrowserRouter as Router,
@@ -298,36 +298,44 @@ function Home({ notification, clearNotification }) {
   }, [searchTerm]);
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10">
+    <div className="min-h-screen bg-[#F4F4F2] font-[Outfit]">
       <MenuButton onClick={() => setIsSidebarOpen(true)} />
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      {notification && <Notification message={notification} onClose={clearNotification} />}
+      {notification && (
+        <Notification message={notification} onClose={clearNotification} />
+      )}
 
-      <div className="max-w-2xl mx-auto px-6">
-        <h1 className="text-3xl font-bold mb-6">Roamly - Explore Adventures</h1>
+      <div className="max-w-3xl mx-auto px-6 py-12">
+        <h1 className="text-4xl font-extrabold text-[#4A7C59] mb-6 tracking-tight">
+          Roamly <span className="text-[#2F2F2F]">— Discover New Adventures</span>
+        </h1>
 
         <input
           type="text"
-          placeholder="Search adventures..."
+          placeholder="🔍 Search for trails, peaks, or cities..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full p-2 border mb-6 rounded"
+          className="w-full px-4 py-3 mb-8 border border-[#DDE8D8] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] bg-white placeholder:text-gray-400"
         />
 
-        {adventures.map((adv) => (
-          <AdventureCard
-            key={adv.adventure_id}
-            id={adv.adventure_id}
-            title={adv.title}
-            createdAt={adv.created_at}
-            owner={adv.owner.username}
-          />
-        ))}
+        <div className="space-y-6">
+          {adventures.map((adv) => (
+            <AdventureCard
+              key={adv.adventure_id}
+              id={adv.adventure_id}
+              title={adv.title}
+              createdAt={adv.created_at}
+              owner={adv.owner.username}
+            />
+          ))}
 
-        {adventures.length === 0 && (
-          <p className="text-gray-500">No adventures found.</p>
-        )}
+          {adventures.length === 0 && (
+            <p className="text-[#888] italic text-center">
+              No adventures found. Try a different keyword!
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
