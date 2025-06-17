@@ -11,8 +11,9 @@ import {
   Outlet,
 } from "react-router-dom";
 import EditAdventurePage from "./components/EditAdventurePage";
+import ChatSidebar from "./components/ChatSidebar";
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "http://3.23.70.81:8000";
 
 function useAuth() {
   const token = localStorage.getItem("token");
@@ -38,7 +39,7 @@ function Sidebar({ isOpen, onClose }) {
     }
 
     const delay = setTimeout(async () => {
-      const res = await fetch(`http://127.0.0.1:8000/user?username=${encodeURIComponent(searchQuery)}&limit=5`);
+      const res = await fetch(`http://3.23.70.81:8000/user?username=${encodeURIComponent(searchQuery)}&limit=5`);
       if (res.ok) {
         const data = await res.json();
         setSearchResults(data);
@@ -60,7 +61,7 @@ function Sidebar({ isOpen, onClose }) {
       </div>
 
       <div className="p-4 space-y-4">
-        {/* 🧭 Search bar */}
+        {/* Search bar */}
         <div>
           <input
             type="text"
@@ -108,6 +109,20 @@ function Sidebar({ isOpen, onClose }) {
             View Profile
           </button>
         )}
+        {isSignedIn && (
+        <div className="pt-2 border-t">
+          <button
+            onClick={() => {
+              localStorage.removeItem("token");
+              onClose();
+              window.location.href = "/";
+            }}
+            className="text-red-600 font-semibold w-full text-left mt-2"
+          >
+            Log Out
+          </button>
+        </div>
+      )}
 
         <button onClick={() => { navigate("/create-adventure"); onClose(); }} className="bg-blue-600 text-white rounded px-4 py-2 w-full">
           Create Adventure
@@ -183,7 +198,7 @@ function CreateAdventurePage({ setNotification }) {
       navigate("/");
     } else {
       const err = await res.json();
-      setNotification("❌ " + (err.detail || "Submission failed"));
+      setNotification(" " + (err.detail || "Submission failed"));
     }
   };
 
@@ -313,7 +328,7 @@ function Home({ notification, clearNotification }) {
 
         <input
           type="text"
-          placeholder="🔍 Search for trails, peaks, or cities..."
+          placeholder=" Search for Adventures!"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full px-4 py-3 mb-8 border border-[#DDE8D8] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] bg-white placeholder:text-gray-400"
@@ -362,7 +377,7 @@ function LoginPage({ setNotification }) {
       setNotification("✅ Logged in successfully!");
       navigate("/");
     } else {
-      setNotification("❌ " + (data.detail || "Login failed"));
+      setNotification(" " + (data.detail || "Login failed"));
     }
   };
 
@@ -765,12 +780,39 @@ function UserProfilePage() {
 function App() {
   const [notification, setNotification] = useState("");
   const clearNotification = () => setNotification("");
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const isSignedIn = useAuth(); 
   useEffect(() => {
     localStorage.removeItem("token");
   }, []);
   return (
     <Router>
       {notification && <Notification message={notification} onClose={clearNotification} />}
+      {isSignedIn && (
+        <>
+        <button
+          onClick={() => setIsChatOpen(true)}
+          className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 01-4-.86L3 20l1.58-3.13A7.96 7.96 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+            />
+          </svg>
+          Roamly Rabbit AI
+        </button>
+        <ChatSidebar isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+        </>
+      )}
       <Routes>
         <Route path="/" element={<Home notification={notification} clearNotification={clearNotification} />} />
         <Route path="/about" element={<AboutPage />} />

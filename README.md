@@ -2,8 +2,6 @@
 
 An adventure-sharing webapp built for exploration
 
-<img src="https://github.com/user-attachments/assets/f671d2aa-bb36-4c26-a583-08ca82ad3581" width="400"/>
-
 Roamly is a social platform where each user can share their outdoor adventures like hikes, travels, and any other new expieriences. This is done through posting Adventures which is a collection of photos with a description and location information. Explorers can search up locations or titles and see other peoples adventures to similiar places and how they enjoyed it!
 
 This project is built from the ground up to demonstrate full-stack web development, cloud deployment, and eventually data stream processing with tools like Kafka and Spark.

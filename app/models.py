@@ -5,7 +5,6 @@ Database.py
 
 handles SQLalchemy Database Model Schema creation (Database strucuture)
 
-Model Design Verion: 1.0
 """
 from app.database import Base
 from sqlalchemy import text, Column, Integer, String, Text, TIMESTAMP, ForeignKey, UniqueConstraint, Index
@@ -37,6 +36,7 @@ class Users(Base):
         postgresql_ops={"username": "gin_trgm_ops"},
     ),
     )
+    
 
 
 #----------------------------------[ Adventures ]----------------------------------

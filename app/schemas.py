@@ -119,3 +119,12 @@ class CommentReturn(CommentBase):
     created_at: datetime
     owner: UserReturn
 
+#----------------------------------[ Chat-LLM ]----------------------------------
+class ChatBase(BaseModel):
+    query: str
+
+class PostQuery(ChatBase):
+    pass
+
+class LLMresponse(BaseModel):
+    response: str

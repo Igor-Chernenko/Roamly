@@ -1,11 +1,13 @@
-# Dockerfile
-FROM python:3.11-slim
+FROM python:3.13.2
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+COPY requirments.txt ./
 
-COPY . .
+RUN pip install --no-cache-dir -r requirments.txt
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+COPY app ./app
+COPY roamly_alembic ./roamly_alembic
+COPY alembic.ini .
+
+CMD [ "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000" ]

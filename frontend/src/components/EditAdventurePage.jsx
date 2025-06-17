@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "http://3.23.70.81:8000";
 
 function EditAdventurePage() {
   const { id } = useParams();

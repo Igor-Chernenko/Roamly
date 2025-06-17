@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     S3_BUCKET_NAME: str
     AWS_ACCESS_KEY: str
     AWS_SECRET_ACCESS_KEY: str
+
+    CHAT_KEY: str
     
     class Config:
         env_file = ".env"
