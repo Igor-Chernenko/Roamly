@@ -4,6 +4,8 @@ Roamly is a full-stack social platform built for adventure lovers. Users can pos
 
 This project was a solo build to showcase real-world full-stack engineering, modern backend architecture, and practical AI integration.
 
+**Demo:** https://youtu.be/F2fZov32SI8
+
 <img width="1789" height="1055" alt="Screenshot 2025-08-11 081153" src="https://github.com/user-attachments/assets/e1c617a6-aee7-4d1c-b8ef-226dc0e0db9f" />
 
 
